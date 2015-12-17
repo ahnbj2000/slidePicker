@@ -1,0 +1,2 @@
+# slidePicker
+slidePicker with jQuery
