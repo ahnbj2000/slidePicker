@@ -17,7 +17,9 @@
     	'selector' : {
 			'view': '',
 			'rolling': '',
-			'list': ''
+			'list': '',
+            'confirm': '',
+            'close': ''
 		},
 		'effect': {
 			'easing': 'ease',
@@ -29,6 +31,7 @@
         'onRender': $.noop,
         'onAfterRender': $.noop,
         'onChange': $.noop,
+        'onConfirm': $.noop,
         'onClose': $.noop
     };
 
@@ -63,11 +66,10 @@
         'easeInOutBack':    'cubic-bezier(.68,-.55,.265,1.55)'
     };
 
-    var _slide_picker_global = null;
 
     // The actual plugin constructor
     function SlidePicker(container, options) {
-        this.container = container;
+        this.container = $(container);
         // merge the default options with user-provided options
 
         this.options = $.extend(true, {}, defaults, options);
@@ -84,7 +86,9 @@
 
     SlidePicker.prototype.init = function () {
         var selector = this.options.selector;
-        this._selectionArea = $(selector.view);
+        this._selectionArea = this.container.find(selector.view);
+        this._confirm = this.container.find(selector.confirm);
+        this._close = this.container.find(selector.close);
         this._selectedClass = this.options.selectedClass;
         var _this = this;
 
@@ -93,6 +97,7 @@
         this._selectionArea.each(function(index) {
             $(this).data('index', index);
             $(this).find(_this.options.selector.list).eq(1).addClass(_this._selectedClass);
+            $(this).css('-webkit-tap-highlight-color', 'transparent');
         });
 
         this._listHeight = $(this.options.selector.list).eq(1).height();
@@ -110,14 +115,17 @@
         this._endDragHandler = $.proxy(onEndDrag, this);
         this._transitionEndHandler = $.proxy(onTransitionEnd, this);
         this._clickHandler = $.proxy(onClick, this);
+        this._confirmHandler = $.proxy(onConfirm, this);
+        this._closeHandler = $.proxy(onClose, this);
 
-        // TODO : 클릭시 구현.
         this._selectionArea.on('mousedown touchstart mouseenter.appoint', this._startDragHandler);
         this._selectionArea.on('mousemove touchmove.appoint', this._dragHandler);
         this._selectionArea.on('mouseup touchend.appoint', this._endDragHandler);
-        this._selectionArea.on('transitionend.appoint', this._transitionEndHandler);
+        this._selectionArea.on('transitionend webkitTransitionEnd.appoint ', this._transitionEndHandler);
         this._selectionArea.on('mousewheel wheel.appoint', this._wheelHandler);
         this._selectionArea.on('click.appoint', this._clickHandler);
+        this._confirm.on('click.appoint', this._confirmHandler);
+        this._close.on('click.appoint', this._closeHandler);
     };
 
     SlidePicker.prototype.pick = function(value) {
@@ -125,7 +133,6 @@
             return;
         }
 
-        var valueArr = [];
         var _this = this;
 
         this._selectionArea.each(function(index, el) {
@@ -136,13 +143,17 @@
                 return false;
             }
             var pickedEl = el.find('[data-id=' + val + ']');
-            var pickedIndex = el.find(_this.options.selector.list).index(pickedEl) - 1;
             var rollingArea = el.find(_this.options.selector.rolling);
+            var listEls = el.find(_this.options.selector.list);
+            var pickedIndex = listEls.index(pickedEl) - 1;
 
-            setTransition.apply(_this, [ 'easeInOutExpo', rollingArea ]);
+            listEls.removeClass(_this._selectedClass);
+            pickedEl.addClass(_this._selectedClass);
+
+            setTransition.apply(_this, [ _this.options.effect.easing, rollingArea ]);
             setTranslate.apply(_this, [ -(pickedIndex * _this._listHeight), rollingArea ]);
         });
-    }
+    };
 
     SlidePicker.prototype.repaint = function(index) {
         var _this = this;
@@ -157,8 +168,8 @@
             if(Math.abs(yAxis) > listHeight) {
                 setTranslate.apply(_this, [ -listHeight, rollingEl ]);
             }
+            listEls.eq(getIndex.call(_this, el)).addClass(_this._selectedClass);
         }
-
         if(typeof(index) === 'undefined') {
             this._selectionArea.each(function(index, el) {
                 adjust(el);
@@ -166,7 +177,54 @@
         } else {
             adjust(this._selectionArea.eq(index));
         }
-    }
+
+    };
+
+    SlidePicker.prototype.show = function(targetElement, value) {
+        this._inputTargetEl = $(targetElement);
+        this.container.show();
+
+        if(!(value instanceof Array)) {
+            this.pick([value]);
+        }
+        this.pick(value);
+        this.adjust();
+    };
+
+    SlidePicker.prototype.hide = function() {
+        this.container.hide();
+        $('.dimmed_layer').remove();
+    };
+
+    SlidePicker.prototype.adjust = function() {
+        var _this = this;
+        var dimmedLayer = $('<div class="dimmed_layer"></div>');
+        dimmedLayer.css({
+            'position': 'fixed',
+            'zIndex': 10000,
+            'top': 0,
+            'left': 0,
+            'right': 0,
+            'bottom': 0,
+            'width': '100%',
+            'height': '100%',
+            'backgroundColor': '#000000',
+            'opacity': 0.6
+        });
+        dimmedLayer.appendTo(document.body);
+
+        dimmedLayer.off('click').on('click', function(event) {
+            _this.hide();
+            $(event.target).remove();
+        });
+
+        this.container.appendTo(document.body);
+        this.container.css({
+            'position': 'fixed',
+            'zIndex': 10001,
+            'top': (window.innerHeight / 2) - (this.container.height() / 2)
+        });
+    };
 
     SlidePicker.prototype.destroy = function() {
         this._selectionArea.off('.appoint');
@@ -177,12 +235,16 @@
         return this.options.isDateTimePicker;
     };
 
+    SlidePicker.prototype.getContainer = function() {
+        return this.container;
+    };
+
     // date, time picker를 사용할 경우 생성되는 DateTime 객체
     // moment js를 필수로 포함시켜야 한다.
     // 모든 날짜 형식은 ISO-8601 표준을 따른다.
     function DateTime() {
         this.today = this.getToday();
-    };
+    }
 
     DateTime.prototype.getToday = function() {
 
@@ -228,7 +290,7 @@
             'hour': moment().format(hourFormat),
             'minute': moment().format('mm')
         };
-    }
+    };
 
     DateTime.prototype.getConvertedTime = function(time, amPmType) {
         var timeArr = time.split(':');
@@ -244,24 +306,26 @@
         }
 
         if(amPmType === 'pm') {
-            convertHour = parseInt(hour, 10);
+            var convertHour = parseInt(hour, 10);
             hour = convertHour < 12 ? convertHour + 12 : '00';
         }
         return {
             'hour': hour,
             'minute': moment().minute(minute).format('mm')
         };
-    }
+    };
 
 
     function setTransition(easing, element) {
         easing = easing || this.options.effect.easing;
-    	var effectStr = [this._transform, this.options.effect.duration + 's', effects[easing], this.options.effect.delay + 's'].join(' ');
+    	var effectStr = [this.options.effect.duration + 's', effects[easing], this.options.effect.delay + 's'].join(' ');
 
         if(typeof(element) !== 'undefined') {
             this._rollingArea = $(element);
         }
+
         this._rollingArea.css('transition', effectStr);
+        this._rollingArea.css('-webkit-transition', effectStr);
         this._yAxis = getTranslate(this._rollingArea).y;
     }
 
@@ -286,7 +350,6 @@
         }
 
     	var listEl = rollingArea.find(this.options.selector.list);
-        var enabledListEl = listEl.eq(1);
         // 마지막 요소가 가운데 노출되도록 하기 위해 리스트 총 갯수에서 1을 뺀다.
         // 가장 첫 요소, 마지막 요소는 빈 값이므로 제외.
         var allListHeight = (listEl.length - 1 - 2) * this._listHeight; 
@@ -307,7 +370,6 @@
     }
 
     function onStartDrag(event) {
-        // console.log('start drag');
         this._isActivate = true;
         this._rollingArea = $(event.currentTarget).find(this.options.selector.rolling);
 
@@ -319,7 +381,6 @@
     }
 
     function onDrag(event) {
-        // console.log('drag');
         event.preventDefault();
 
         if(this._isActivate) {
@@ -331,23 +392,16 @@
     }
 
     function onEndDrag(event) {
-        // console.log('end drag');
         this._isActivate = false;
+        //this._selectionArea.trigger('transitionend');
     }
 
     function onTransitionEnd(event) {
-        // console.log('transition end');
         var containerEl = event.currentTarget;
-        var index = Math.abs(getTranslate($(containerEl).find(this.options.selector.rolling)).y / this._listHeight) + 1;
+        var index = getIndex.call(this, containerEl);
         var listEl = $(containerEl).find(this.options.selector.list);
         var _this = this;
 
-        // this._selectionArea.each(function(index, el) {
-        //     console.log($(containerEl).data('index'), index, el)
-        //     if($(containerEl).data('index') < index) {
-        //         setTranslate.apply(_this, [ 0, $(el).find(_this.options.selector.rolling) ]);
-        //     }
-        // });
         listEl.removeClass(this._selectedClass);
         listEl.eq(index).addClass(this._selectedClass);
 
@@ -357,7 +411,7 @@
             if(selectedEl.length === 0) {
                 selectedEl = $(el).find(_this.options.selector.list).eq(1);
             }
-            values.push(selectedEl.data('id'));
+            values.push(selectedEl.attr('data-id'));
         });
 
         this.options.onChange.apply(this, [ containerEl, {
@@ -391,9 +445,33 @@
 
     }
 
+    function onConfirm() {
+        var selectedValue = [];
+        var selectedEls = this.container.find('.' + this._selectedClass);
+
+        selectedEls.each(function() {
+            // jQuery의 data 함수를 사용하면 내부 저장소에서 자료형에 따라 변환을 해버리기 때문에
+            // attr로 실제 DOM의 data-id 속성을 가져와야 처음 지정한 타입으로 가져올 수 있다.
+            selectedValue.push($(this).attr('data-id'));
+        });
+        this.hide();
+        this.options.onConfirm.apply(this, [ this._inputTargetEl, selectedValue ]);
+        this._inputTargetEl = null;
+    }
+
+    function onClose() {
+        this.hide();
+        this._inputTargetEl = null;
+        this.options.onClose.apply(this);
+    }
+
     /////////////////////
     /// Util functions ///
     /////////////////////
+    function getIndex(containerEl) {
+        return Math.abs(getTranslate($(containerEl).find(this.options.selector.rolling)).y / this._listHeight) + 1;
+    }
+
     function getTranslate(element) {
         var transform = element.css('-webkit-transform') || element.css('-ms-transform') || element.css('-moz-transform') || 
                         element.css('-o-transform') || element.css('transform');
@@ -402,10 +480,10 @@
         return { x: parseFloat(matrix[4]) || 0, y: parseFloat(matrix[5]) || 0 };
     }
 
-    function getVendorPropertyName(prop) {
+    function getVendorPropertyName(prop, doLowerCase) {
         if (prop in document.body.style) return prop;
 
-        var prefixes = ['Moz', 'Webkit', 'O', 'ms'];
+        var prefixes = (!doLowerCase) ? ['Moz', 'Webkit', 'O', 'ms'] : ['moz', 'webkit', 'o', 'ms'];
         var prop_ = prop.charAt(0).toUpperCase() + prop.substr(1);
 
         for (var i = 0; i < prefixes.length; ++i) {
