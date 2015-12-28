@@ -121,7 +121,7 @@
         this._selectionArea.on('mousedown touchstart mouseenter.appoint', this._startDragHandler);
         this._selectionArea.on('mousemove touchmove.appoint', this._dragHandler);
         this._selectionArea.on('mouseup touchend.appoint', this._endDragHandler);
-        this._selectionArea.on('transitionend.appoint', this._transitionEndHandler);
+        this._selectionArea.on('transitionend webkitTransitionEnd.appoint ', this._transitionEndHandler);
         this._selectionArea.on('mousewheel wheel.appoint', this._wheelHandler);
         this._selectionArea.on('click.appoint', this._clickHandler);
         this._confirm.on('click.appoint', this._confirmHandler);
@@ -318,12 +318,14 @@
 
     function setTransition(easing, element) {
         easing = easing || this.options.effect.easing;
-    	var effectStr = [this._transform, this.options.effect.duration + 's', effects[easing], this.options.effect.delay + 's'].join(' ');
+    	var effectStr = [this.options.effect.duration + 's', effects[easing], this.options.effect.delay + 's'].join(' ');
 
         if(typeof(element) !== 'undefined') {
             this._rollingArea = $(element);
         }
+
         this._rollingArea.css('transition', effectStr);
+        this._rollingArea.css('-webkit-transition', effectStr);
         this._yAxis = getTranslate(this._rollingArea).y;
     }
 
@@ -391,6 +393,7 @@
 
     function onEndDrag(event) {
         this._isActivate = false;
+        //this._selectionArea.trigger('transitionend');
     }
 
     function onTransitionEnd(event) {
@@ -477,10 +480,10 @@
         return { x: parseFloat(matrix[4]) || 0, y: parseFloat(matrix[5]) || 0 };
     }
 
-    function getVendorPropertyName(prop) {
+    function getVendorPropertyName(prop, doLowerCase) {
         if (prop in document.body.style) return prop;
 
-        var prefixes = ['Moz', 'Webkit', 'O', 'ms'];
+        var prefixes = (!doLowerCase) ? ['Moz', 'Webkit', 'O', 'ms'] : ['moz', 'webkit', 'o', 'ms'];
         var prop_ = prop.charAt(0).toUpperCase() + prop.substr(1);
 
         for (var i = 0; i < prefixes.length; ++i) {
