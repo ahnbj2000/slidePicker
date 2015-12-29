@@ -414,10 +414,7 @@
         }
     }
 
-    function onEndDrag(event) {
-        this._isActivate = false;
-        //this._selectionArea.trigger('transitionend');
-    }
+    function onEndDrag(event) {}
 
     function onTransitionEnd(event) {
         var containerEl = event.currentTarget;
@@ -438,10 +435,11 @@
         });
 
         this.options.onChange.apply(this, [ containerEl, {
-            'index': index, 
+            'index': index,
             'id': listEl.eq(index).data('id'),
             'values': values
         }]);
+        this._isActivate = false;
     }
 
     function onWheel(event) {
@@ -465,18 +463,27 @@
         }
 
         setTranslate.apply(this, [ -((index-1) * this._listHeight), containerEl.find(this.options.selector.rolling) ]);
-
     }
 
     function onConfirm() {
         var selectedValue = [];
         var selectedEls = this.container.find('.' + this._selectedClass);
+        var isValid = true;
 
         selectedEls.each(function() {
             // jQuery의 data 함수를 사용하면 내부 저장소에서 자료형에 따라 변환을 해버리기 때문에
             // attr로 실제 DOM의 data-id 속성을 가져와야 처음 지정한 타입으로 가져올 수 있다.
-            selectedValue.push($(this).attr('data-id'));
+            var id = $(this).attr('data-id');
+            if(!id) {
+                isValid = false;
+                return false;
+            }
+            selectedValue.push(id);
         });
+        if(!isValid) {
+            return;
+        }
+
         this.hide();
         this.options.onConfirm.apply(this, [ this._inputTargetEl, selectedValue ]);
         this._inputTargetEl = null;
