@@ -48,7 +48,7 @@
 			'duration': 1,
 			'delay': 0
 		},
-        'selectedClass': '',
+        'selectedClass': 'selected',
         'isDateTimePicker': false,
         'onRender': $.noop,
         'onAfterRender': $.noop,
