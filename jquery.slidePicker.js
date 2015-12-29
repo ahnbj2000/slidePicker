@@ -2,15 +2,15 @@
 (function (factory) {
     if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
-        define(['jquery', 'moment'], factory);
+        define(['jquery'], factory);
     } else if (typeof exports === 'object') {
         // Node/CommonJS
-        factory(require('jquery'), require('moment'));
+        factory(require('jquery'));
     } else {
         // Browser globals
-        factory(jQuery, moment);
+        factory(jQuery);
     }
-}(function ($, moment) {
+}(function ($) {
     'use strict';
     
     var defaults = {
@@ -229,6 +229,7 @@
     SlidePicker.prototype.destroy = function() {
         this._selectionArea.off('.appoint');
         this.dateTime = null;
+        this.container.removeData('slide_picker_inst');
     };
 
     SlidePicker.prototype.isDateOrTimeType = function() {
