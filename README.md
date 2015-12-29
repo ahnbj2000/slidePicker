@@ -5,3 +5,4 @@ this plugin support all kinds of list-picker style.
 e.g. datepicker, timepicker... etc
 
 ## example
+http://codepen.io/potatofactory/full/vLyymJ/
