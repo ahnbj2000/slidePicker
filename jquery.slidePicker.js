@@ -51,6 +51,8 @@
         'selectedClass': 'selected',
         'isDateTimePicker': false,
         'onRender': $.noop,
+        'onShow': $.noop,
+        'onHide': $.noop,
         'onAfterRender': $.noop,
         'onChange': $.noop,
         'onConfirm': $.noop,
@@ -160,7 +162,7 @@
         this._selectionArea.each(function(index, el) {
             var val = value[index];
             el = $(el);
-            // el.find(_this.options.selector.list).eq(1).addClass('selected');
+
             if(!val) {
                 return false;
             }
@@ -204,6 +206,8 @@
 
     SlidePicker.prototype.show = function(targetElement, value) {
         this._inputTargetEl = $(targetElement);
+
+        this.options.onShow.apply(this, [ value ]);
         this.container.show();
 
         if(!(value instanceof Array)) {
@@ -216,6 +220,7 @@
     SlidePicker.prototype.hide = function() {
         this.container.hide();
         $('.dimmed_layer').remove();
+        this.options.onHide.apply(this);
     };
 
     SlidePicker.prototype.adjust = function() {
@@ -244,7 +249,8 @@
         this.container.css({
             'position': 'fixed',
             'zIndex': 10001,
-            'top': (window.innerHeight / 2) - (this.container.height() / 2)
+            'top': (window.innerHeight / 2) - (this.container.outerHeight(true) / 2),
+            'left': (window.innerWidth / 2) - (this.container.outerWidth(true) / 2)
         });
     };
 
