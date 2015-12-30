@@ -9,4 +9,4 @@ PC - Chrome, Firefox (IE is unstable)
 Mobile - iOS Safari, Chrome, Android default browser, chrome
 
 ## example
-http://codepen.io/potatofactory/full/vLyymJ/ (In this example, it is recommended to look at the mobile or mobile simulator.)
+http://s.codepen.io/potatofactory/debug/vLyymJ (In this example, it is recommended to look at the mobile or mobile simulator.)
