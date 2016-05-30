@@ -220,6 +220,7 @@
     SlidePicker.prototype.hide = function() {
         this.container.hide();
         $('.dimmed_layer').remove();
+        $(document.body).off('.dimmedEvent');
         this.options.onHide.apply(this);
     };
 
@@ -239,10 +240,13 @@
             'opacity': 0.6
         });
         dimmedLayer.appendTo(document.body);
-
-        dimmedLayer.off('click').on('click', function(event) {
+        
+        $(document.body).on('touchmove.dimmedEvent', function(event) {
+            event.preventDefault();
+        });
+        
+        dimmedLayer.off('.dimmedEvent').on('click.dimmedEvent', function(event) {
             _this.hide();
-            $(event.target).remove();
         });
 
         this.container.appendTo(document.body);
