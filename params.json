@@ -1,0 +1,6 @@
+{
+  "name": "slidePicker",
+  "tagline": "slidePicker with jQuery",
+  "body": "# slidePicker\r\nslidePicker with jQuery\r\n\r\nThis plugin support all kinds of list-picker style. \r\ne.g. datepicker, timepicker... etc\r\n\r\n## supported devices and browser\r\nPC - Chrome, Firefox (IE is unstable) \r\nMobile - iOS Safari, Chrome, Android default browser, chrome\r\n\r\n## example\r\nhttp://s.codepen.io/potatofactory/debug/vLyymJ (In this example, it is recommended to look at the mobile or mobile simulator.)\r\n",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
